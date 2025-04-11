@@ -29,16 +29,16 @@ def install_torch():
 def install_packages():
    
     try:
-        # First install PyTorch
+      
         if not install_torch():
             print("Failed to install PyTorch. Please install it manually from https://pytorch.org/")
             sys.exit(1)
             
-        # Then install other packages
+        
         import pkg_resources
         installed = {pkg.key for pkg in pkg_resources.working_set}
         
-        # Define packages with versions
+
         required_packages = [
             "requests>=2.31.0",
             "feedparser>=6.0.10",
@@ -63,19 +63,19 @@ def install_packages():
         
         if missing:
             print(f"Installing missing packages: {', '.join(missing)}")
-            # Install protobuf first if it's missing
+           
             if "protobuf" in missing:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "protobuf>=4.25.1"])
                 missing.remove("protobuf>=4.25.1")
             
-            # Install remaining packages
+
             if missing:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
             print("Package installation completed.")
         else:
             print("All required packages are already installed.")
             
-        # Try to install sentencepiece separately with error handling
+        
         try:
             import sentencepiece
             print("sentencepiece is already installed.")
@@ -93,10 +93,10 @@ def install_packages():
         print(f"Error installing packages: {str(e)}")
         sys.exit(1)
 
-# Install required packages
+
 install_packages()
 
-# Import required packages
+
 import requests
 import feedparser
 import pandas as pd
@@ -114,7 +114,7 @@ from fake_useragent import UserAgent
 from datetime import datetime
 from pymongo import MongoClient
 
-# Import torch and transformers with error handling
+
 try:
     import torch
     from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -124,8 +124,7 @@ except ImportError as e:
     print("Please ensure you have CUDA-compatible GPU and proper PyTorch installation.")
     print("You can try installing PyTorch manually from: https://pytorch.org/")
     sys.exit(1)
-
-# Download required NLTK data
+    
 def download_nltk_data():
     """Download required NLTK data"""
     try:
@@ -142,13 +141,13 @@ def download_nltk_data():
         print(f"Error downloading NLTK data: {str(e)}")
         sys.exit(1)
 
-# Download NLTK data
+
 download_nltk_data()
 
-# SSL Configuration
+
 ssl._create_default_https_context = ssl._create_unverified_context
 
-# Initialize global variables
+
 ml_model = None
 vectorizer = None
 device = None
@@ -164,6 +163,8 @@ except LookupError:
     nltk.download('stopwords')
 
 try:
+try:
+try:
     nltk.data.find('corpora/wordnet')
 except LookupError:
     nltk.download('wordnet')
@@ -172,28 +173,28 @@ import pandas as pd
 
 def generate_disaster_keywords(location):
     """Generate disaster keywords"""
-    # Core disaster keywords
+
     keywords = [
         "earthquake", "flood", "cyclone", "tsunami", 
         "landslide", "rain", "typhoon", "volcano",
         "storm", "hurricane", "tornado", "drought"
     ]
     
-    # Add location variations to improve search
+
     location_variations = [location]
-    if " " in location:  # Handle multi-word locations
+    if " " in location: 
         location_variations.append(location.replace(" ", ""))
         location_variations.extend(location.split())
     
-    # Create search keywords with location variations
+    
     final_keywords = []
     for loc in location_variations:
         for kw in keywords:
             if kw not in loc.lower():
                 final_keywords.append(f"{loc} {kw}")
-    final_keywords.extend(keywords)  # Add standalone disaster keywords
+    final_keywords.extend(keywords)  
     
-    df = pd.DataFrame({'keyword': list(set(final_keywords))})  # Remove duplicates
+    df = pd.DataFrame({'keyword': list(set(final_keywords))})  
     return df
 
 DISASTER_KEYWORDS = [
@@ -229,13 +230,13 @@ class NewsArticle:
 
 def scrape_google_news(location, num_results=20):
     """Scrapes Google News for disaster-related articles for a given location."""
-    # Use disaster keywords
+    
     keywords = DISASTER_KEYWORDS
     
-    # Create location query
+    
     location_query = f'"{location}"'
     
-    # Create disaster keywords query
+    
     disaster_query = ' OR '.join([f'"{kw}"' for kw in keywords])
     search_query = f'({location_query}) AND ({disaster_query})'
     
@@ -251,7 +252,7 @@ def scrape_google_news(location, num_results=20):
             except ValueError:
                 published_date = None
 
-            # Only check if it's recent (within last 30 days)
+    
             if published_date is None or (datetime.now() - published_date).days <= 30:
                 article = NewsArticle(
                     source=entry.source.title,
@@ -274,23 +275,23 @@ def is_location_relevant(text, target_location):
     text = text.lower()
     target_location = target_location.lower()
     
-    # List of words that might indicate the article is about a different location
+    
     location_indicators = ['in', 'at', 'from', 'near', 'around']
     
-    # Split text into sentences
+    
     sentences = text.split('.')
     
     for sentence in sentences:
-        # If the target location is mentioned in a sentence
+    
         if target_location in sentence:
-            # Check if another location is more prominent
+    
             words = sentence.split()
             for i, word in enumerate(words):
                 if word in location_indicators and i + 1 < len(words):
                     next_word = words[i + 1]
-                    # If the word after location indicator is not our target location
+    
                     if next_word != target_location and len(next_word) > 3:
-                        # Check if this might be the main location of the event
+    
                         if next_word.istitle() or next_word in sentence.split(target_location)[0]:
                             return False
     
@@ -304,47 +305,47 @@ def collect_all_disaster_news(location):
 
     all_articles = []
 
-    # Collect from various sources
+    
     print(f"Collecting news for {location}...")
     
-    # Google News (primary source)
+    
     print("Fetching from Google News...")
     google_articles = scrape_google_news(location)
     if google_articles:
         all_articles.extend([article.to_dict() for article in google_articles])
         print(f"Found {len(google_articles)} articles from Google News")
     
-    # News websites (secondary source)
+    
     print("Fetching from news websites...")
     website_articles = scrape_news_websites(location)
     if website_articles:
         all_articles.extend(website_articles)
         print(f"Found {len(website_articles)} articles from news websites")
     
-    # Twitter (optional source)
+    
     print("Fetching from Twitter...")
     twitter_articles = scrape_twitter(location)
     if twitter_articles:
         all_articles.extend(twitter_articles)
         print(f"Found {len(twitter_articles)} articles from Twitter")
 
-    # Convert to DataFrame
+    
     df = pd.DataFrame(all_articles)
 
     if df.empty:
         print("No articles found from any source")
         return df
 
-    # Ensure required columns exist
+    
     required_columns = ['source', 'title', 'content', 'url']
     for col in required_columns:
         if col not in df.columns:
             df[col] = ''
 
-    # Clean and process the combined dataset
+    
     df = clean_combined_dataset(df)
 
-    # Calculate trust scores using ML model
+    
     df = calculate_trust_scores_for_dataset(df)
 
     return df
@@ -380,14 +381,14 @@ API_KEY = "keuLbQOMCQJkFh8XRCPbkY8Or1"
 API_SECRET = "Cj7fvx89BtRzCpd5PY0J82D1MpSiXILEi7FGPyNeKLdoBQzWNj"
 BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAAOnr0AEAAAAAZ6s4SeQiuXQrxzBRo7cbEBnVzts%3DDlLmnr6hAxgTv6reEhgBh0VXd0fDNblcMCv4NJK7eUKuVzub3i"
 
-# Replace with your actual Bearer token
+
 BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
 
 def scrape_twitter(location):
     articles = []
     search_url = "https://api.twitter.com/2/tweets/search/recent"
 
-    # Construct query with location
+    
     query_params = {
         'query': f'({location}) ("earthquake" OR "flood" OR "cyclone" OR "hurricane" OR "wildfire" OR "landslide" OR "tsunami" OR "tornado" OR "disaster" OR "volcanic eruption") ("breaking" OR "alert" OR "update" OR "news" OR "evacuation" OR "damage" OR "rescue" OR "emergency") lang:en',
         'max_results': '50',
@@ -433,7 +434,7 @@ def scrape_news_websites(location):
         "Reuters": "https://www.reuters.com/rssFeed/worldNews"
     }
     
-    # Use only disaster keywords without location
+    
     disaster_keywords = DISASTER_KEYWORDS
     
     for source, url in RSS_FEEDS.items():
@@ -446,7 +447,7 @@ def scrape_news_websites(location):
                 link = entry.link if hasattr(entry, 'link') else ""
                 published = entry.published if hasattr(entry, 'published') else None
                 
-                # Check if the article contains any disaster keywords
+                
                 text = f"{title} {content}".lower()
                 if any(keyword.lower() in text for keyword in disaster_keywords):
                     article = NewsArticle(
@@ -477,26 +478,26 @@ from sklearn.metrics import accuracy_score, classification_report
 def initialize_model():
     """Initialize the fake news detection model from Hugging Face"""
     try:
-        # Check if sentencepiece is available
+        
         try:
             import sentencepiece
         except ImportError:
             print("Warning: sentencepiece not available. Using basic tokenizer.")
             return None, None, None
 
-        # Use a pre-trained model fine-tuned for fake news detection
-        model_name = "microsoft/deberta-v3-base"  # Using a more reliable base model
+        
+        model_name = "microsoft/deberta-v3-base"  
         print("Loading tokenizer...")
         try:
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             print("Loading model...")
             model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
             
-            # Move model to GPU if available
+            
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             print(f"Using device: {device}")
             model = model.to(device)
-            model.eval()  # Set to evaluation mode
+            model.eval()  
             
             print("Model initialized successfully")
             return model, tokenizer, device
